@@ -153,7 +153,8 @@ public class MapsActivity extends FragmentActivity {
                 intent1.putExtra("lon", lon + "");
                 startActivity(intent1);
                 */
-                receiverNumber="";
+                //receiverNumber="03459236850"; //For Local Testing
+                receiverNumber="4082029450";  //For Client Testing
                 Toast.makeText(getApplicationContext(),"Coming Soon...",Toast.LENGTH_SHORT).show();
                 SharePreferences.setInitLat(getApplicationContext(), String.valueOf(lat));
                 SharePreferences.setInitLon(getApplicationContext(), String.valueOf(lon));
@@ -162,15 +163,14 @@ public class MapsActivity extends FragmentActivity {
 
                 try {
                     SmsManager smsManager = SmsManager.getDefault();
-                    Log.d("msg", "sending request: " + message + " to " + receiverNumber);
-                  //  smsManager.sendTextMessage(receiverNumber, null, message, null, null);  //SENDING SMS HERE
-                //    Toast.makeText(MapsActivity.this, "Location Sharing Request Sent Successfully!",Toast.LENGTH_LONG).show();
+                    smsManager.sendTextMessage(receiverNumber, null, message, null, null);  //SENDING SMS HERE
+                    Toast.makeText(MapsActivity.this, "Location Sharing Request Sent Successfully!",Toast.LENGTH_LONG).show();
 
                 } catch (Exception e) {
                     //Toast.makeText(this, "SMS faild, please try again.", Toast.LENGTH_LONG).show();
                     e.printStackTrace();
                 }
-                //getAddressFromLocation(lat, lon, MapsActivity.this, new GeocoderHandler());
+                getAddressFromLocation(lat, lon, MapsActivity.this, new GeocoderHandler());
             }
         });
 

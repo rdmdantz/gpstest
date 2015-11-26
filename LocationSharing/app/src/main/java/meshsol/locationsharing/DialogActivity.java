@@ -13,6 +13,7 @@ public class DialogActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        SharePreferences.setPrefMode(getApplicationContext(),"");
         String msg=getIntent().getStringExtra("msg");
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
         alertDialogBuilder.setTitle("Session Ending");

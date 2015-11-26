@@ -30,6 +30,10 @@ public class SharePreferences {
     static final String PREF_NORMAL_ALARM_ID="normalAlarm";
     static final String PREF_HIGHFREQUENCY_ALARM_ID="highFreqAlarm";
 
+    static final String PREF_IS_SAFEWAY="isSafeway";
+
+    static final String PREF_MODE="myMode";
+
     static SharedPreferences getSharedPreferences(Context ctx) {
         return PreferenceManager.getDefaultSharedPreferences(ctx);
     }
@@ -40,6 +44,22 @@ public class SharePreferences {
         editor.putString(PREF_NORMAL_ALARM_ID, id);
         editor.commit();
     }
+
+    public static void setPrefMode(Context ctx, String mode)
+    {
+        SharedPreferences.Editor editor = getSharedPreferences(ctx).edit();
+        editor.putString(PREF_MODE, mode);
+        editor.commit();
+    }
+
+
+    public static void setPrefIsSafeway(Context ctx, boolean flag)
+    {
+        SharedPreferences.Editor editor = getSharedPreferences(ctx).edit();
+        editor.putBoolean(PREF_IS_SAFEWAY, flag);
+        editor.commit();
+    }
+
 
     public static void setPrefHighfrequencyAlarmId(Context ctx, String id)
     {
@@ -242,5 +262,13 @@ public class SharePreferences {
 
     public static String getPrefHighfrequencyAlarmId(Context ctx) {
         return getSharedPreferences(ctx).getString(PREF_HIGHFREQUENCY_ALARM_ID, "");
+    }
+
+    public static String getPrefMode(Context ctx) {
+        return getSharedPreferences(ctx).getString(PREF_MODE, "");
+    }
+
+    public static boolean getPrefIsSafeway(Context ctx) {
+        return getSharedPreferences(ctx).getBoolean(PREF_IS_SAFEWAY, false);
     }
 }

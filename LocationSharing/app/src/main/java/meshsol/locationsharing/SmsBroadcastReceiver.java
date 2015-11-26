@@ -35,7 +35,9 @@ public class SmsBroadcastReceiver extends BroadcastReceiver {
                     String[] separated = smsBody.split("#");
                     String subAddress = "";
                     subAddress = address.replaceAll("\\D+", "");
+
                     long l = Long.parseLong(subAddress);
+
                     if (separated[0] != null && separated[0] != "" && separated[0].equalsIgnoreCase("Clicke below link to get user location\n http://meshsol.com/LocationSharing")) {
                             Log.d("msg","in receiver");
                         if(separated[3].equalsIgnoreCase("stopUpdatingLocation") && SharePreferences.getPrefSession(context)!=null && SharePreferences.getPrefSession(context)!="" && SharePreferences.getPrefSession(context).equalsIgnoreCase("active")){
@@ -105,8 +107,10 @@ public class SmsBroadcastReceiver extends BroadcastReceiver {
                                 intent1.putExtra("speed", separated[4]);
                                 intent1.putExtra("server_id", separated[5]);
                             }
-                            if(separated.length>6){
-
+                            if(separated.length>6 && separated[6].equalsIgnoreCase("safeway")){
+                             SharePreferences.setPrefIsSafeway(appContext,true);
+                            }else{
+                                SharePreferences.setPrefIsSafeway(appContext,false);
                             }
                             intent1.putExtra("sender", address);
 

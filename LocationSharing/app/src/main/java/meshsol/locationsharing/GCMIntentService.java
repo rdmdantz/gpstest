@@ -10,7 +10,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.v7.app.NotificationCompat;
 import android.util.Log;
-import android.widget.Toast;
 
 //import com.google.android.gcm.GCMBaseIntentService;
 
@@ -60,7 +59,6 @@ public class GCMIntentService extends IntentService {
                 Context context=getApplicationContext();
                 String message = intent.getExtras().getString("message");
                 Log.e(TAG, " Received Notification: " + message);
-                Toast.makeText(context,"Received Notification: "+message+" at GCMIntent service",Toast.LENGTH_SHORT).show();
                 String[] parts = message.split(";");
                 parts[1]=parts[1].replaceAll(" ","");
                 parts[2]=parts[2].replaceAll(" ","");
@@ -69,7 +67,36 @@ public class GCMIntentService extends IntentService {
                 long l = Long.parseLong(sender);
         if (parts[0] != null && parts[0] != "" ) {
 
-            if(parts[0].equalsIgnoreCase("stopUpdatingLocation")){
+            if(parts[0].equalsIgnoreCase("guestReached")){
+
+                // GUEST HAS REACHED DESTINATION
+                SharePreferences.setPrefSession(context,"destroyed");
+                AlarmManager aManager = (AlarmManager) getApplicationContext().getSystemService(Context.ALARM_SERVICE);
+                int cancel_alarm_id_normal=Integer.valueOf(SharePreferences.getPrefNormalAlarmId(getApplicationContext()));
+                Log.e("msg", "STOP SENDING NORMAL UPDATES for id: " + cancel_alarm_id_normal);
+                Intent Receiverintent = new Intent(getApplicationContext(), RepeatNotification.class);
+                PendingIntent alarmIntent;
+                alarmIntent = PendingIntent.getBroadcast(getApplicationContext(),cancel_alarm_id_normal, Receiverintent, PendingIntent.FLAG_UPDATE_CURRENT);
+                alarmIntent.cancel();
+                aManager.cancel(alarmIntent);
+
+                //STOP SENDING HIGH FREQUENCY UPDATES
+                AlarmManager aManager1= (AlarmManager) context.getSystemService(context.ALARM_SERVICE);
+                int cancel_alarm_id_hf=Integer.valueOf(SharePreferences.getPrefNormalAlarmId(getApplicationContext()));
+                Log.d("msg", "STOP SENDING HIGH FREQUENCY UPDATES for id: " + cancel_alarm_id_hf);
+                Intent Receiverintent1 = new Intent(getApplicationContext(), HighFreqAlarm.class);
+                PendingIntent alarmIntent1;
+                alarmIntent1 = PendingIntent.getBroadcast(getApplicationContext(),cancel_alarm_id_hf, Receiverintent1, PendingIntent.FLAG_UPDATE_CURRENT);
+                alarmIntent1.cancel();
+                aManager1.cancel(alarmIntent1);
+
+                Intent intent1 = new Intent();
+                intent1.setClassName("meshsol.locationsharing", "meshsol.locationsharing.DialogActivity");
+                intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent1.putExtra("msg","Guest decided to end Location Sharing Session");
+                startActivity(intent1);
+
+            } else if(parts[0].equalsIgnoreCase("stopUpdatingLocation")){
                 //ENDING SESSION
 
                 SharePreferences.setPrefSession(context,"destroyed");
@@ -97,14 +124,14 @@ public class GCMIntentService extends IntentService {
                 Intent intent1 = new Intent();
                 intent1.setClassName("meshsol.locationsharing", "meshsol.locationsharing.DialogActivity");
                 intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                intent1.putExtra("msg","Guest decided to end Location Sharing Session");
+                intent1.putExtra("msg","Host decided to end Location Sharing Session");
                 startActivity(intent1);
 
             }else if (parts[0].equalsIgnoreCase("updateLocation")) {
                 intent = new Intent(context, LocationTracking.class);
-                intent.putExtra("number",sender);
+                intent.putExtra("number", sender);
                 Log.e("msg","updateLocationOnRequest");
-                intent.putExtra("frequency","requestedUpdate");
+                intent.putExtra("frequency", "requestedUpdate");
                 if(!isMyServiceRunning(LocationTracking.class,context)) {
                     context.startService(intent);
                 }

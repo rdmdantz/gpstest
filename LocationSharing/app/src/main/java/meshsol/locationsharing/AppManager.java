@@ -13,4 +13,7 @@ public class AppManager {
     public static String apiKey_this="AIzaSyD4MoFKleKFGPCrcX7hGxKZzINKIdn1Fmg";
     public static String projectId_t="160681141131";
     public static String md5="F8:92:C3:2C:AA:02:B2:B1:75:03:A8:1F:C4:FD:B6:34";
+
+    public static String hostMode="host";
+    public static String guestMode="guest";
 }
