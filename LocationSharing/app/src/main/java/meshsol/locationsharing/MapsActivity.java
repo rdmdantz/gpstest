@@ -154,8 +154,8 @@ public class MapsActivity extends FragmentActivity {
                 startActivity(intent1);
                 */
                 //receiverNumber="03459236850"; //For Local Testing
-                receiverNumber="4082029450";  //For Client Testing
-                Toast.makeText(getApplicationContext(),"Coming Soon...",Toast.LENGTH_SHORT).show();
+                //receiverNumber="4082029450";  //For Client Testing
+                receiverNumber="6026928808";  //For Client Testing
                 SharePreferences.setInitLat(getApplicationContext(), String.valueOf(lat));
                 SharePreferences.setInitLon(getApplicationContext(), String.valueOf(lon));
                 SharePreferences.setPrefSession(getApplicationContext(), "active");

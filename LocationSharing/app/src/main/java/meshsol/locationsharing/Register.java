@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.DefaultRetryPolicy;
@@ -23,6 +24,8 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 
 import org.json.JSONObject;
@@ -65,33 +68,31 @@ public class Register extends Activity {
                     return;
 
                 }
-                 if (AppManager.project_id == null || AppManager.project_id.length() == 0) {
+                if (AppManager.project_id == null || AppManager.project_id.length() == 0) {
 
-                        // GCM sernder id / server url is missing
-                        showAlertDialog(Register.this, "configuration Error!",
-                                "Please set your Server URL and GCM Sender ID");
+                    // GCM sernder id / server url is missing
+                    showAlertDialog(Register.this, "configuration Error!",
+                            "Please set your Server URL and GCM Sender ID");
 
-                        // stop executing code by return
-                        return;
-                 }
+                    // stop executing code by return
+                    return;
+                }
 
-                phoneNumber=etContact.getText().toString();
-                if (phoneNumber.length()>0) {
-                            //if (phoneNumber.matches(phoneNumberPattern)) {
-                              //  operation="signup";
-                               // RegGcm();
-                            //} else {
-                             //   etemail.setError("Provide valid Email");
+                phoneNumber = etContact.getText().toString();
+                if (phoneNumber.length() > 0) {
+                    //if (phoneNumber.matches(phoneNumberPattern)) {
+                    //  operation="signup";
+                    // RegGcm();
+                    //} else {
+                    //   etemail.setError("Provide valid Email");
 
-                           // }
-                            RegGcm();
-                        }
-                        else
-                        {
-                               etContact.setError("Provide valid Phone");
-                        }
+                    // }
+                    RegGcm();
+                } else {
+                    etContact.setError("Provide valid Phone");
+                }
 
-                    }
+            }
         });
 
 
@@ -118,12 +119,15 @@ public class Register extends Activity {
                         gcm = GoogleCloudMessaging
                                 .getInstance(getApplicationContext());
                     }
-                    regId = gcm.register(AppManager.project_id);
-                    msg = "Device registered, registration ID=" + regId;
+                    if(checkPlayServices()) {
+                        regId = gcm.register(AppManager.project_id);
+                        msg = "Device registered, registration ID=" + regId;
 
-                    SharePreferences.setPrefUserGcmId(getApplicationContext(), regId);
-                    Log.d("msg", "device reg with id: " + SharePreferences.getPrefUserGcmId(getApplicationContext()));
-
+                        SharePreferences.setPrefUserGcmId(getApplicationContext(), regId);
+                        Log.d("msg", "device reg with id: " + SharePreferences.getPrefUserGcmId(getApplicationContext()));
+                    }else{
+                        Toast.makeText(Register.this,"Service Not Available on your device",Toast.LENGTH_SHORT).show();
+                    }
                 } catch (IOException ex) {
                     // Toast.makeText(customer.this, "unable",
                     // Toast.LENGTH_LONG).show();
@@ -262,6 +266,21 @@ public class Register extends Activity {
 
         }
         return false;
+    }
+
+    public boolean checkPlayServices() {
+        boolean retVal = true;
+        int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
+        if (resultCode != ConnectionResult.SUCCESS) {
+            retVal = false;
+            if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
+
+            } else {
+
+            }
+         //   Toast.makeText(Register.this, "GCM checkPlayServices(): This device does not support new GCM implementation.",Toast.LENGTH_SHORT).show();
+        }
+        return retVal;
     }
 
 

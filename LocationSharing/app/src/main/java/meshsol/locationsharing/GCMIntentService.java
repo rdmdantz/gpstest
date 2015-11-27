@@ -8,10 +8,15 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.v7.app.NotificationCompat;
 import android.util.Log;
-
-//import com.google.android.gcm.GCMBaseIntentService;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.TextView;
+import android.widget.Toast;
 
 
 public class GCMIntentService extends IntentService {
@@ -23,32 +28,6 @@ public class GCMIntentService extends IntentService {
         super(AppManager.project_id);
     }
 
-    /**
-     * Method called on device registered
-     **/
-
-	/*
-	@Override
-	protected void onRegistered(Context context, String registrationId) {
-		Log.i(TAG, "Device registered: regId = " + registrationId);
-		// displayMessage(context, "Your device registred with GCM");
-		// Log.d("NAME", MainActivity.name);
-		// ServerUtilities.register(context, MainActivity.name,
-		// MainActivity.email, registrationId);
-	}
-	*/
-
-    /**
-     * Method called on device un registred
-     * */
-/*
-	@Override
-	protected void onUnregistered(Context context, String registrationId) {
-		Log.i(TAG, "Device unregistered");
-		// displayMessage(context, getString(R.string.gcm_unregistered));
-		// ServerUtilities.unregister(context, registrationId);
-	}
-*/
 
     /**
      * Method called on Receiving a new message
@@ -59,6 +38,7 @@ public class GCMIntentService extends IntentService {
                 Context context=getApplicationContext();
                 String message = intent.getExtras().getString("message");
                 Log.e(TAG, " Received Notification: " + message);
+//                ShowToast(message);
                 String[] parts = message.split(";");
                 parts[1]=parts[1].replaceAll(" ","");
                 parts[2]=parts[2].replaceAll(" ","");
@@ -92,7 +72,9 @@ public class GCMIntentService extends IntentService {
 
                 Intent intent1 = new Intent();
                 intent1.setClassName("meshsol.locationsharing", "meshsol.locationsharing.DialogActivity");
-                intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent1.setFlags(intent1.FLAG_ACTIVITY_NEW_TASK
+                        | intent1.FLAG_ACTIVITY_CLEAR_TOP
+                        | intent1.FLAG_ACTIVITY_SINGLE_TOP);
                 intent1.putExtra("msg","Guest decided to end Location Sharing Session");
                 startActivity(intent1);
 
@@ -171,7 +153,7 @@ public class GCMIntentService extends IntentService {
                 startActivity(intent1);
 
             } else  if(parts[0].equalsIgnoreCase("request")){
-
+                SharePreferences.setPrefServerUpdated(getApplicationContext(), "false");
                 Intent intent1 = new Intent();
                 intent1.setClassName("meshsol.locationsharing", "meshsol.locationsharing.LocationDisplay");
                 intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -194,6 +176,7 @@ public class GCMIntentService extends IntentService {
                 context.startActivity(intent1);
             }else  if(parts[0].equalsIgnoreCase("UpdatingNormal") || parts[0].equalsIgnoreCase("UpdatingHighFreq") || parts[0].equalsIgnoreCase("requestedUpdate")){
                 Log.d("msg", "starting activity from intent service");
+                SharePreferences.setPrefServerUpdated(getApplicationContext(), "false");
                 Intent intent1 = new Intent(GCMIntentService.this,LocationDisplay.class);
                 intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY);
                 intent1.putExtra("lat", parts[3]);
@@ -211,37 +194,7 @@ public class GCMIntentService extends IntentService {
         }
             }
 
-    /**
-     * Method called on receiving a deleted message
-     * */
-	/*@Override
-	protected void onDeletedMessages(Context context, int total) {
-		Log.i(TAG, "Received deleted messages notification");
-		String message = getString(R.string.gcm_deleted, total);
-		// displayMessage(context, message);
-		// notifies user
-		generateNotification(message);
-	}
-*/
-    /**
-     * Method called on Error
-     * */
-	/*@Override
-	public void onError(Context context, String errorId) {
-		Log.i(TAG, "Received error: " + errorId);
-		// displayMessage(context, getString(R.string.gcm_error, errorId));
-	}
-*/
-/*
-	@Override
-	protected boolean onRecoverableError(Context context, String errorId) {
-		// log message
-		Log.i(TAG, "Received recoverable error: " + errorId);
-		// displayMessage(context,
-		// getString(R.string.gcm_recoverable_error, errorId));
-		return super.onRecoverableError(context, errorId);
-	}
-*/
+
 
     /**
      * Issues a notification to inform the user that server has sent a message.
@@ -272,6 +225,9 @@ public class GCMIntentService extends IntentService {
 
     }
 
+    /**
+     * Checking service is running or not
+     */
     private boolean isMyServiceRunning(Class serviceClass,Context context) {
         ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
@@ -282,4 +238,31 @@ public class GCMIntentService extends IntentService {
         return false;
     }
 
+    /**
+     * Function using Handler to show Toast message
+     */
+    public void ShowToast(final String msg)
+    {  final Context MyContext = getApplicationContext();
+        new Handler(Looper.getMainLooper()).post(new Runnable()
+        {  @Override public void run()
+            {
+                Context context = getApplicationContext();
+                // Create layout inflator object to inflate toast.xml file
+                LayoutInflater inflater = (LayoutInflater) MyContext.getSystemService( Context.LAYOUT_INFLATER_SERVICE );
+
+                // Call toast.xml file for toast layout
+                View toastRoot = inflater.inflate(R.layout.toast, null);
+                TextView tvMessage=(TextView)toastRoot.findViewById(R.id.tvToastMessages);
+                tvMessage.setText(msg);
+                Toast toast = new Toast(MyContext);
+
+                // Set layout to toast
+                toast.setView(toastRoot);
+                toast.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.CENTER_VERTICAL,
+                        0, 0);
+                toast.setDuration(Toast.LENGTH_LONG);
+                toast.show();
+            }
+        });
+    };
 }

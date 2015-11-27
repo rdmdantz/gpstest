@@ -12,10 +12,17 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.support.v4.content.ContextCompat;
 import android.telephony.SmsManager;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.DefaultRetryPolicy;
@@ -344,7 +351,9 @@ public class LocationTracking extends Service implements GoogleApiClient.Connect
                         // Result handling
                         Log.d("response msg", response);
                         if(response.equalsIgnoreCase("false")){
-                          //  Toast.makeText(getApplicationContext(), "operation " + operation, Toast.LENGTH_SHORT).show();
+                           ShowToast("Notification not sent..");
+                         }else{
+                         //   ShowToast("Host notified successfully");
                         }
 
 
@@ -388,5 +397,32 @@ public class LocationTracking extends Service implements GoogleApiClient.Connect
         queue.add(stringRequest);
     }
 
+    /**
+     * Function using Handler to show Toast message
+     */
+    public void ShowToast(final String msg)
+    {  final Context MyContext = getApplicationContext();
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                Context context = getApplicationContext();
+                // Create layout inflator object to inflate toast.xml file
+                LayoutInflater inflater = (LayoutInflater) MyContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
+                // Call toast.xml file for toast layout
+                View toastRoot = inflater.inflate(R.layout.toast, null);
+                TextView tvMessage = (TextView) toastRoot.findViewById(R.id.tvToastMessages);
+                tvMessage.setText(msg);
+                Toast toast = new Toast(MyContext);
+
+                // Set layout to toast
+                toast.setView(toastRoot);
+                toast.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.CENTER_VERTICAL,
+                        0, 0);
+                toast.setDuration(Toast.LENGTH_LONG);
+                toast.show();
+            }
+        });
+    };
 
 }
