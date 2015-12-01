@@ -2,7 +2,11 @@ package meshsol.locationsharing;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.preference.PreferenceManager;
+
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Created by Wasiq Billah on 11/9/2015.
@@ -10,8 +14,12 @@ import android.preference.PreferenceManager;
 public class SharePreferences {
     static final String PREF_INIT_LAT= "initLat";
     static final String PREF_INIT_LON="initLon";
-    static final String PREF_PREV_LAT= "prevLat";
-    static final String PREF_PREV_LON="prevLon";
+
+    static final String PREF_PREV_LAT= "prevLat";  //STORING GUEST PREV LAT
+    static final String PREF_PREV_LON="prevLon";  // STORING GUEST PREV LON
+
+    static final String PREF_MY_LAT= "myLat";    // FOR STORING CURRENT LAT
+    static final String PREF_MY_LON="myLon";     // FOR STORING CURRENT LON
     static final String PREF_TIME= "prevTime";
 
     static final String PREF_SESSION= "sessoin";
@@ -26,6 +34,10 @@ public class SharePreferences {
 
     static final String PREF_GUEST_SERVER_ID="guestGcmId";
     static final String PREF_HOST_SERVER_ID="hostGcmId";
+
+    static final String PREF_GUEST_PHONE="guestPhone";
+    static final String PREF_HOST_PHONE="hostPhone";
+
 
     static final String PREF_NORMAL_ALARM_ID="normalAlarm";
     static final String PREF_HIGHFREQUENCY_ALARM_ID="highFreqAlarm";
@@ -49,6 +61,20 @@ public class SharePreferences {
     {
         SharedPreferences.Editor editor = getSharedPreferences(ctx).edit();
         editor.putString(PREF_MODE, mode);
+        editor.commit();
+    }
+
+    public static void setPrefMyLat(Context ctx, String lat)
+    {
+        SharedPreferences.Editor editor = getSharedPreferences(ctx).edit();
+        editor.putString(PREF_MY_LAT, lat);
+        editor.commit();
+    }
+
+    public static void setPrefMyLon(Context ctx, String lon)
+    {
+        SharedPreferences.Editor editor = getSharedPreferences(ctx).edit();
+        editor.putString(PREF_MY_LON, lon);
         editor.commit();
     }
 
@@ -81,6 +107,22 @@ public class SharePreferences {
         editor.putString(PREF_HOST_SERVER_ID, id);
         editor.commit();
     }
+
+
+    public static void setPrefGuestPhone(Context ctx, String phone)
+    {
+        SharedPreferences.Editor editor = getSharedPreferences(ctx).edit();
+        editor.putString(PREF_GUEST_PHONE,phone);
+        editor.commit();
+    }
+
+    public static void setPrefHostPhone(Context ctx, String phone)
+    {
+        SharedPreferences.Editor editor = getSharedPreferences(ctx).edit();
+        editor.putString(PREF_HOST_PHONE, phone);
+        editor.commit();
+    }
+
 
 
 
@@ -256,6 +298,16 @@ public class SharePreferences {
         return getSharedPreferences(ctx).getString(PREF_HOST_SERVER_ID, "");
     }
 
+
+    public static String getPrefGuestPhone(Context ctx) {
+        return getSharedPreferences(ctx).getString(PREF_GUEST_PHONE, "");
+    }
+
+    public static String getPrefHostPhone(Context ctx) {
+        return getSharedPreferences(ctx).getString(PREF_HOST_PHONE, "");
+    }
+
+
     public static String getPrefNormalAlarmId(Context ctx) {
         return getSharedPreferences(ctx).getString(PREF_NORMAL_ALARM_ID, "");
     }
@@ -268,7 +320,49 @@ public class SharePreferences {
         return getSharedPreferences(ctx).getString(PREF_MODE, "");
     }
 
+    public static String getPrefMyLat(Context ctx) {
+        return getSharedPreferences(ctx).getString(PREF_MY_LAT, "");
+    }
+
+    public static String getPrefMyLon(Context ctx) {
+        return getSharedPreferences(ctx).getString(PREF_MY_LON, "");
+    }
+
     public static boolean getPrefIsSafeway(Context ctx) {
         return getSharedPreferences(ctx).getBoolean(PREF_IS_SAFEWAY, false);
     }
+
+
+
+    /**
+     * Manually save a Bundle object to SharedPreferences.
+     * @param ed
+     * @param header
+     * @param gameState
+     */
+    public static void saveBundle(SharedPreferences.Editor ed, String header, Bundle gameState) {
+        Set<String> keySet = gameState.keySet();
+        Iterator<String> it = keySet.iterator();
+
+        while (it.hasNext()){
+            String key = it.next();
+            Object o = gameState.get(key);
+            if (o == null){
+                ed.remove(header + key);
+            } else if (o instanceof Integer){
+                ed.putInt(header + key, (Integer) o);
+            } else if (o instanceof Long){
+                ed.putLong(header + key, (Long) o);
+            } else if (o instanceof Boolean){
+                ed.putBoolean(header + key, (Boolean) o);
+            } else if (o instanceof CharSequence){
+                ed.putString(header + key, ((CharSequence) o).toString());
+            } else if (o instanceof Bundle){
+                saveBundle(ed,header + key, ((Bundle) o));
+            }
+        }
+
+        ed.commit();
+    }
+
 }

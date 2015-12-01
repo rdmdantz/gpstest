@@ -13,6 +13,7 @@
     <TextView
         android:id="@+id/tvToastMessages"
         android:paddingLeft="5dp"
+        android:background="#777777"
         android:textColor="#ffffff"
         android:textStyle="bold"
         android:layout_width="wrap_content"

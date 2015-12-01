@@ -4,7 +4,9 @@ package meshsol.locationsharing;
  * Created by Wasiq Billah on 11/16/2015.
  */
 public class AppManager {
-    public  static String url="http://54.251.156.226:80/LocationSharing/controller.php";
+  //  public  static String url="http://54.251.156.226:80/LocationSharing/controller.php";  //Last used
+
+    public  static String url="http://54.169.110.177:80/LocationSharing/controller.php";  //Last used
    // public  static String url="http://192.168.1.100:80/LocationSharing/controller.php";
    public static String apiKey="AIzaSyBerr5YmJLgMP4Fwbq1C5ZNxs6e-7GXYlU";
     public static String project_id="160681141131";
@@ -16,4 +18,8 @@ public class AppManager {
 
     public static String hostMode="host";
     public static String guestMode="guest";
+
+    public static double SafewayLatitude=37.3946841;    //for client
+    public static double SafewayLongitude=-121.9480919; //for client
+
 }

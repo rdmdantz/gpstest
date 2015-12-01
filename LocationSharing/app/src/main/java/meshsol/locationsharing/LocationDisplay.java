@@ -2,8 +2,6 @@ package meshsol.locationsharing;
 
 import android.app.AlarmManager;
 import android.app.AlertDialog;
-import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
@@ -28,13 +26,13 @@ import android.os.Handler;
 import android.os.Message;
 import android.provider.ContactsContract;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -81,18 +79,22 @@ public class LocationDisplay extends FragmentActivity {
     ProgressDialog pdialog;
     private Button updateButton;
     private Button stopUpdateButton;
+
+    private Button updateButton1;
+    private Button stopUpdateButton1;
+
     private Button btnGetCustomLocation;
     private EditText etGetLocation;
     private TextView tvMessage;
     GoogleMap mMap;
 
-    private String senderLat;
-    private String senderLon;
-    private String sender;
-    private String senderByLink;
-    private String alertMessage;
-    private String extension;
-    private boolean currentNotShown;
+    private String senderLat="";
+    private String senderLon="";
+    private String sender="";
+    private String senderByLink="";
+    private String alertMessage="";
+    private String extension="";
+    private boolean currentNotShown=false;
     private double lat=33.7472;
     private double lon=73.1389;
     private double SafewayLatitude=37.3946841;    //for client
@@ -102,58 +104,107 @@ public class LocationDisplay extends FragmentActivity {
     private String distance = "";
     private String duration = "";
     private String senderName="";
-    private String messageBody;
-    private String user_speed;
-    private float user_speed_actual;
-    private String newETA;
-    private  boolean responseSet;
-    private boolean startedToMove;
-    private float etaInMinutes;
-    public String addressResult;
+    private String messageBody="";
+    private String user_speed="";
+    private float user_speed_actual=0.0f;
+    private String newETA="";
+    private  boolean responseSet=false;
+    private boolean startedToMove=false;
+    private float etaInMinutes=0.0f;
+    public String addressResult="";
     private long etaMillis;
     private String operation="";
-    private String server_id;
+    private String server_id="";
     private LocationManager thisLocationManager;
     public MyLocationListener myLocationListener;
+    private ImageButton btMenuLocationDisplay;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Intent intent=getIntent();
-        senderLat=intent.getStringExtra("lat");
-        senderLon=intent.getStringExtra("lon");
-        sender=intent.getStringExtra("sender");
-        extension=intent.getStringExtra("extension");
-        user_speed=intent.getStringExtra("speed");
-        senderByLink=intent.getStringExtra("senderByLink");
-        server_id=intent.getStringExtra("server_id");
-        responseSet=false;
-        startedToMove=false;
-        etaInMinutes=0.0f;
-        myLocationListener=new MyLocationListener();
-        if(sender.equalsIgnoreCase("link")){
-            senderName = getContactName(getApplicationContext(), senderByLink);
-        }else {
-            senderName = getContactName(getApplicationContext(), sender);
+        String menu=intent.getStringExtra("menu");
+        if(menu!=null && menu.equalsIgnoreCase("menu")){
+            setContentView(R.layout.activity_maps_buttons);
+
+            btMenuLocationDisplay=(ImageButton)findViewById(R.id.btMenuLocationDisplay);
+
+            btMenuLocationDisplay.setVisibility(View.GONE);
+
+            updateButton1 = (Button) findViewById(R.id.btnUpdateLocation1);
+            stopUpdateButton1=(Button)findViewById(R.id.btnStopNotification1);
+            updateButton1.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try {
+
+                        getAddressFromLocation(lat,lon,LocationDisplay.this,new GeocoderHandler(),"updateLocation");
+
+                    } catch (Exception e) {
+                        Log.e("error msg", e.getMessage().toString());
+                    }
+
+                    Toast.makeText(getApplicationContext(), "Requested To Update Location...", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            stopUpdateButton1.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try {
+
+                        getAddressFromLocation(lat, lon, LocationDisplay.this, new GeocoderHandler(), "stopUpdatingLocation");
+                        finish();
+                    } catch (Exception e) {
+                        Log.e("msg", e.getMessage().toString());
+                    }
+
+                    Toast.makeText(getApplicationContext(), "Requested To  Stop Update Location...", Toast.LENGTH_SHORT).show();
+                }
+            });
         }
-        if(sender.equalsIgnoreCase("link")){
+        else {
+           /* SharedPreferences save = getSharedPreferences(SAVE, MODE_PRIVATE);
+            SharedPreferences.Editor ed = save.edit();
+            SharePreferences.saveBundle(ed, "", bundle);*/
+            senderLat = intent.getStringExtra("lat");
+            senderLon = intent.getStringExtra("lon");
+            sender = intent.getStringExtra("sender");
+            extension = intent.getStringExtra("extension");
+            user_speed = intent.getStringExtra("speed");
+            senderByLink = intent.getStringExtra("senderByLink");
+            server_id = intent.getStringExtra("server_id");
+            responseSet = false;
+            startedToMove = false;
+            etaInMinutes = 0.0f;
+            myLocationListener = new MyLocationListener();
+            if (sender.equalsIgnoreCase("link")) {
+                senderName = getContactName(getApplicationContext(), senderByLink);
+            } else {
+                senderName = getContactName(getApplicationContext(), sender);
+            }
+            if (sender.equalsIgnoreCase("link")) {
 
-        }else {
-            if(senderName!=""){
-                alertMessage=senderName+" shared Location with You \n Do you want to see and share your location?";
+            } else {
+                if (senderName != "") {
+                    alertMessage = senderName + " shared Location with You \n Do you want to see and share your location?";
 
-            }else{
-                alertMessage=sender+" shared Location with You \n Do you want to see and share your location?";
+                } else {
+                    alertMessage = sender + " shared Location with You \n Do you want to see and share your location?";
+
+                }
 
             }
-
+            showLocation();
         }
-        showLocation();
-
     }
 
 
     public void showLocation() {
         setContentView(R.layout.activity_maps);
+        btMenuLocationDisplay=(ImageButton)findViewById(R.id.btMenuLocationDisplay);
+
+        btMenuLocationDisplay.setVisibility(View.GONE);
+
         btnGetCustomLocation=(Button)findViewById(R.id.btnGetCustomLocation);
         btnGetCustomLocation.setVisibility(View.GONE);
         tvMessage = (TextView) findViewById(R.id.tvmsg);
@@ -168,24 +219,12 @@ public class LocationDisplay extends FragmentActivity {
             updateButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    String message = "Clicke below link to get user location \n http://meshsol.com/LocationSharing#" + " " + "#" + "" + "#updateLocation";
                     try {
-                        SmsManager smsManager = SmsManager.getDefault();
-                     //   message_type="UPDATE LOCATION";
 
-                        //UPDATE LOCATION BUTTON
-                        if (sender.equalsIgnoreCase("link")) {
-                           // smsManager.sendTextMessage(senderByLink, null, message, null, null);
-                        } else {
-                //            smsManager.sendTextMessage(sender, null, message, null, null);
-                            operation="updateLocation";
                             getAddressFromLocation(lat,lon,LocationDisplay.this,new GeocoderHandler(),"updateLocation");
-                        }
-                       // DevicePolicyManager mDPM = (DevicePolicyManager) LocationDisplay.this.getSystemService(Context.DEVICE_POLICY_SERVICE);
-                       // mDPM.lockNow();
+
                     } catch (Exception e) {
-                        //Toast.makeText(this, "SMS faild, please try again.", Toast.LENGTH_LONG).show();
-                        e.printStackTrace();
+                       Log.e("error msg", e.getMessage().toString());
                     }
 
                      Toast.makeText(getApplicationContext(), "Requested To Update Location...", Toast.LENGTH_SHORT).show();
@@ -195,24 +234,12 @@ public class LocationDisplay extends FragmentActivity {
             stopUpdateButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    String message = "Clicke below link to get user location \n http://meshsol.com/LocationSharing#" + " " + "#" + "" + "#stopUpdatingLocation";
                     try {
-                        SmsManager smsManager = SmsManager.getDefault();
-                        //extension="stopUpdates";
 
-                        //UPDATE LOCATION BUTTON
-                        if (sender.equalsIgnoreCase("link")) {
-                            //smsManager.sendTextMessage(senderByLink, null, message, null, null);
-                        } else {
-                            //smsManager.sendTextMessage(sender, null, message, null, null);
-                            operation="stopUpdatingLocation";
                             getAddressFromLocation(lat,lon,LocationDisplay.this,new GeocoderHandler(),"stopUpdatingLocation");
-                        }
-                   //     DevicePolicyManager mDPM = (DevicePolicyManager) LocationDisplay.this.getSystemService(Context.DEVICE_POLICY_SERVICE);
-                     //   mDPM.lockNow();
+
                     } catch (Exception e) {
-                        //Toast.makeText(this, "SMS faild, please try again.", Toast.LENGTH_LONG).show();
-                        e.printStackTrace();
+                        Log.e("msg",e.getMessage().toString());
                     }
 
                     Toast.makeText(getApplicationContext(), "Requested To  Stop Update Location...", Toast.LENGTH_SHORT).show();
@@ -331,12 +358,6 @@ public class LocationDisplay extends FragmentActivity {
         criteria.setCostAllowed(true);
         criteria.setPowerRequirement(Criteria.POWER_HIGH);
         String provider = thisLocationManager.getBestProvider(criteria, true);
-        if ( ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
-            Log.d("msg","requesting location updates from showLocation()");
-            thisLocationManager.requestLocationUpdates(provider, 1, 1, this.myLocationListener);
-        }else{
-            Log.d("msg","Not granted Location permissions");
-        }
 
 
 
@@ -687,28 +708,46 @@ public class LocationDisplay extends FragmentActivity {
 
                 //Formatting Messages for Displaying
                 if (sender.equalsIgnoreCase("link")) {
-                    if (senderName != "") {
-                        tvMessage.setText("Sender: " + senderName + "\n" + "Distance: " + distance + "\n Speed: " +  user_speed + " miles/h \n ETA: " + newETA);
-                    } else {
-                        tvMessage.setText("Sender: " + senderByLink + "\n" + "Distance: " + distance + "\n Speed: " +  user_speed + " miles/h \n ETA: " + newETA);
+                    if(extension.equalsIgnoreCase("Response")) {
+                        if (senderName != "") {
+                            tvMessage.setText("I am going to " + senderName + "\n" + "Distance: " + distance + "\n Speed: " + user_speed + " miles/h \n ETA: " + newETA);
+                        } else {
+                            tvMessage.setText("I am going to" + senderByLink + "\n" + "Distance: " + distance + "\n Speed: " + user_speed + " miles/h \n ETA: " + newETA);
+                        }
+                    }else{
+                        if (senderName != "") {
+                            tvMessage.setText(senderName + " is coming to me\n" + "Distance: " + distance + "\n Speed: " + user_speed + " miles/h \n ETA: " + newETA);
+                        } else {
+                            tvMessage.setText(senderByLink + " is coming to me \n" + "Distance: " + distance + "\n Speed: " + user_speed + " miles/h \n ETA: " + newETA);
+                        }
                     }
                 } else {
-                    if (senderName != "") {
-                        tvMessage.setText("Sender: " + senderName + "\n" + "Distance: " + distance + "\n Speed: " + user_speed + " miles/h \n ETA: " + newETA);
-                    } else {
-                        tvMessage.setText("Sender: " + sender + "\n" + "Distance: " + distance + "\n Speed: " + user_speed + " miles/h \n ETA: " + newETA);
+                    if(extension.equalsIgnoreCase("Response")) {
+                        if (senderName != "") {
+                            tvMessage.setText("I am going to " + senderName + "\n" + "Distance: " + distance + "\n Speed: " + user_speed + " miles/h \n ETA: " + newETA);
+                        } else {
+                            tvMessage.setText("I am going to" + sender + "\n" + "Distance: " + distance + "\n Speed: " + user_speed + " miles/h \n ETA: " + newETA);
+                        }
+                    }else{
+                        if (senderName != "") {
+                            tvMessage.setText( senderName + " is coming to me\n" + "Distance: " + distance + "\n Speed: " + user_speed + " miles/h \n ETA: " + newETA);
+                        } else {
+                            tvMessage.setText(sender + " is coming to me\n" + "Distance: " + distance + "\n Speed: " + user_speed + " miles/h \n ETA: " + newETA);
+                        }
                     }
                 }
 
                 //Showing Notifications for updatesNormal or HighFrequency
-                if (extension.equalsIgnoreCase("UpdatingNormal") || extension.equalsIgnoreCase("UpdatingHighFreq") || extension.equalsIgnoreCase("requestedUpdate") && SharePreferences.getPrefServerUpdated(getApplicationContext()).equalsIgnoreCase("false") && !sender.equalsIgnoreCase("link"))
+              //  extension.equalsIgnoreCase("requestedUpdate") || extension.equalsIgnoreCase("UpdatingNormal") ||
+                if ( extension.equalsIgnoreCase("UpdatingHighFreq") && SharePreferences.getPrefServerUpdated(getApplicationContext()).equalsIgnoreCase("false") && !sender.equalsIgnoreCase("link"))
                 {
 
                     SharePreferences.setPrefUpdatedNormal(getApplicationContext(), "true");
                     SharePreferences.setPrefServerUpdated(getApplicationContext(), "true");
-                    operation = "updateLocationDb";
+
                     getAddressFromLocation(lat, lon, LocationDisplay.this, new GeocoderHandler(),"updateLocationDb");
-                    String notification_message = "ON TIME";
+
+               /*     String notification_message = "ON TIME";
                     Long requiredDiff = System.currentTimeMillis() - Long.valueOf(SharePreferences.getPrefPrevTimeEta(getApplicationContext(), "EtaStoringTime"));
                     Long actualDiff = Long.valueOf(SharePreferences.getPrefPrevEta(getApplicationContext(), "ValueOfEta")) - etaMillis;
                     int diff = (int) ((requiredDiff - actualDiff) / 1000) / 60;
@@ -751,7 +790,7 @@ public class LocationDisplay extends FragmentActivity {
                             .setAutoCancel(true).setContentTitle(title)
                             .setContentText(notification_message).build();
 
-                    notificationManager.notify(notification_id, notification);
+                    notificationManager.notify(notification_id, notification);*/
                 }
 
                 //Formating Distance
@@ -759,12 +798,15 @@ public class LocationDisplay extends FragmentActivity {
                 if(distance.contains("k") || distance.contains("K")){
                     String formatedDistance = distance.replaceAll("[a-zA-Z]", "");
                     distance_in_meters=Float.valueOf(formatedDistance)*1000;
+                }else  if(distance.contains("i") || distance.contains("l")){
+                    String formatedDistance = distance.replaceAll("[a-zA-Z]", "");
+                    distance_in_meters=Float.valueOf(formatedDistance)*1609.34f;
                 }else{
-                String formatedDistance = distance.replaceAll("[a-zA-Z]", "");
-                    distance_in_meters=Float.valueOf(formatedDistance);
+                      String formatedDistance = distance.replaceAll("[a-zA-Z]", "");
+                      distance_in_meters=Float.valueOf(formatedDistance);
                 }
                     //etaInMinutes < 4
-                if (distance_in_meters <100 && extension.equalsIgnoreCase("UpdatingNormal") && !sender.equalsIgnoreCase("link") && SharePreferences.getPrefRequestedToChangeUpdateFrequency(getApplicationContext()).equalsIgnoreCase("false")) {
+               /* if (distance_in_meters <1000 && extension.equalsIgnoreCase("UpdatingNormal") && !sender.equalsIgnoreCase("link") && SharePreferences.getPrefRequestedToChangeUpdateFrequency(getApplicationContext()).equalsIgnoreCase("false")) {
                     SharePreferences.setPrefRequestedToChangeUpdateFrequency(getApplicationContext(), "true");
                     //SEND MESSAGE TO CANCEL ALARM AFTER 5 AND STARD UPDATING AFTER 15 SECONDS
                     messageBody = "Clicke below link to get user location \n http://meshsol.com/LocationSharing#" + " " + "#" + "" + "#changeUpdateFreq";
@@ -774,14 +816,10 @@ public class LocationDisplay extends FragmentActivity {
                         getAddressFromLocation(lat, lon, LocationDisplay.this, new GeocoderHandler(),"changeUpdateFreq");
 
 
-                        //SmsManager smsManager = SmsManager.getDefault();
-                        //smsManager.sendTextMessage(sender, null, messageBody, null, null);   // CHANGING UPDATE FREQUENCY
-                        //DevicePolicyManager mDPM = (DevicePolicyManager) LocationDisplay.this.getSystemService(Context.DEVICE_POLICY_SERVICE);
-                        //mDPM.lockNow();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }   //etaInMinutes<= 1 ||
-                } else if ((distance_in_meters < 17) && extension.equalsIgnoreCase("UpdatingHighFreq") && !sender.equalsIgnoreCase("link") && SharePreferences.getPrefStopedToSendMessagesMessageSent(getApplicationContext()).equalsIgnoreCase("false")) {
+                } else*/ if ((distance_in_meters < 17) && extension.equalsIgnoreCase("UpdatingHighFreq") && !sender.equalsIgnoreCase("link") && SharePreferences.getPrefStopedToSendMessagesMessageSent(getApplicationContext()).equalsIgnoreCase("false")) {
                     SharePreferences.setPrefStopedSendingMessage(getApplicationContext(), "true");
                     messageBody = "Clicke below link to get user location \n http://meshsol.com/LocationSharing#" + " " + "#" + "" + "#StopSendingUpdates";
                     try {
@@ -795,11 +833,7 @@ public class LocationDisplay extends FragmentActivity {
                         startActivity(intent1);
 
 
-                        // SmsManager smsManager = SmsManager.getDefault();
-                        //  smsManager.sendTextMessage(sender, null,messageBody, null, null);    // REQUESTING TO STOP UPDATES
-                        //DevicePolicyManager mDPM = (DevicePolicyManager) LocationDisplay.this.getSystemService(Context.DEVICE_POLICY_SERVICE);
-                       // mDPM.lockNow();
-                    } catch (Exception e) {
+                       } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
@@ -813,7 +847,14 @@ public class LocationDisplay extends FragmentActivity {
                                 public void onClick(DialogInterface dialog, int which) {
 
                                     try {
+                                      //  operation = "updateLocationDb";
+                                      //  SharePreferences.setPrefSession(getApplicationContext(), "active");
 
+                                        getAddressFromLocation(lat, lon, LocationDisplay.this, new GeocoderHandler(), "updateLocationDb");
+
+                                        SharePreferences.setPrefGuestPhone(getApplicationContext(),sender);
+                                        SharePreferences.setPrefMyLat(getApplicationContext(), String.valueOf(lat));
+                                        SharePreferences.setPrefMyLon(getApplicationContext(),String.valueOf(lon));
                                         SharePreferences.setPrevTimeEta(getApplicationContext(), "EtaStoringTime", String.valueOf(System.currentTimeMillis()));
                                         SharePreferences.setPrevEta(getApplicationContext(), "ValueOfEta", String.valueOf(etaMillis));
                                         SharePreferences.setPrefUpdatedNormal(getApplicationContext(), "false");
@@ -826,6 +867,7 @@ public class LocationDisplay extends FragmentActivity {
                                         smsManager.sendTextMessage(sender, null, messageBody, null, null);   //SENDING RESPONSE
                                         Toast.makeText(LocationDisplay.this, "Location Shared Successfully! with"+sender,
                                                 Toast.LENGTH_LONG).show();
+                                        finish();
                                     } catch (Exception e) {
                                         e.printStackTrace();
                                     }
@@ -842,12 +884,11 @@ public class LocationDisplay extends FragmentActivity {
                             .setIcon(android.R.drawable.ic_dialog_alert)
                             .show();
                 } else if (extension.equalsIgnoreCase("Response") && !sender.equalsIgnoreCase("link") && !responseSet) {
+
                     responseSet = true;
-                    operation = "updateLocationDb";
-                    getAddressFromLocation(lat, lon, LocationDisplay.this, new GeocoderHandler(),"updateLocationDb");
+                    SharePreferences.setPrefSession(getApplicationContext(), "active");
                     SharePreferences.setPrefMode(getApplicationContext(),AppManager.guestMode);
                     SharePreferences.setPrefHostServerId(getApplicationContext(),server_id);
-                    Log.d("msg", "guest gcm_id" + server_id);
                     AlarmManager alarmManager = (AlarmManager) getApplicationContext().getSystemService(Context.ALARM_SERVICE);
                     Intent Receiverintent = new Intent(getApplicationContext(), RepeatNotification.class);
                     Receiverintent.putExtra("sender", sender);
@@ -864,7 +905,7 @@ public class LocationDisplay extends FragmentActivity {
                 //STOPING TO SEND NOTIFICATIONS ON GUEST SIDE IF CLOSE ENOUGH TO DESTINATION
                 // etaInMinutes<1 || statement not for local testing..
                 if((distance_in_meters <17) && SharePreferences.getPrefMode(getApplicationContext()).equalsIgnoreCase(AppManager.guestMode)){
-                    Toast.makeText(LocationDisplay.this,"distance in meters: "+distance_in_meters+" Time in mins"+fDuration,Toast.LENGTH_SHORT).show();
+                //    Toast.makeText(LocationDisplay.this,"distance in meters: "+distance_in_meters+" Time in mins"+fDuration,Toast.LENGTH_SHORT).show();
 
                     operation = "guestReached";
                     getAddressFromLocation(lat, lon, LocationDisplay.this, new GeocoderHandler(),"guestReached");
@@ -963,9 +1004,9 @@ public class LocationDisplay extends FragmentActivity {
 
 
 
-    private void updateServer(String thisOperation){
-        operation=thisOperation;
-        Log.d("msg", "updating server  for operation :"+operation);
+    private void updateServer(final String thisOperation){
+//        operation=thisOperation;
+        Log.d("msg", "updating server  for operation :"+thisOperation);
         RequestQueue queue = Volley.newRequestQueue(this);
         StringRequest stringRequest = new StringRequest(Request.Method.POST,AppManager.url,
                 new Response.Listener<String>() {
@@ -998,25 +1039,36 @@ public class LocationDisplay extends FragmentActivity {
             protected Map getParams() throws AuthFailureError
             {
                 Map<String,String> params = new HashMap<String, String>();
-                params.put("operation",operation);
-                if((extension.equalsIgnoreCase("Request") || extension.equalsIgnoreCase("Response"))) {
+                params.put("operation",thisOperation);
+                if(extension.equalsIgnoreCase("Request")) {
                     params.put("eta", "Not Departed");
-                }else {
+                    params.put("lat", String.valueOf(lat));
+                    params.put("lon",String.valueOf(lon));
+                    params.put("receiver",sender);
+                    params.put("sender",SharePreferences.getPrefUserNumber(getApplicationContext()));
+                    params.put("message_type","Response");
+                }else  {
                     params.put("eta", etaInMinutes + " min");
+                    params.put("lat", String.valueOf(senderLat));
+                    params.put("lon",String.valueOf(senderLon));
+                    params.put("receiver",SharePreferences.getPrefUserNumber(getApplicationContext()));
+                    params.put("sender",SharePreferences.getPrefGuestPhone(getApplicationContext()));
+                    params.put("message_type",extension);
                 }
+
                 params.put("distance",distance);
                 params.put("speed", user_speed);
-                params.put("lat", String.valueOf(lat));
-                params.put("lon",String.valueOf(lon));
                 params.put("location",addressResult);
-                params.put("message_type",extension);
+
+
                 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 Calendar calendar = Calendar.getInstance();
                 formatter.format(calendar.getTimeInMillis());
                 params.put("date_time", formatter.format(calendar.getTimeInMillis()));
-                params.put("receiver",sender);
-                params.put("sender",SharePreferences.getPrefUserNumber(getApplicationContext()));
+               // params.put("receiver",sender);
+               // params.put("sender",SharePreferences.getPrefUserNumber(getApplicationContext()));
                 params.put("guest_server_id",SharePreferences.getPrefGuestServerId(getApplicationContext()));
+                params.put("host_server_id",SharePreferences.getPrefHostServerId(getApplicationContext()));
                 Log.d("msg","Params: "+params.toString());
                 return params;
             }

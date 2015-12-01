@@ -3,7 +3,6 @@ package meshsol.locationsharing;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.app.admin.DevicePolicyManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -27,6 +26,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
@@ -61,6 +61,7 @@ public class MapsActivity extends FragmentActivity {
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private Button btnSender;
     private Button btnMintPlaza;
+    private ImageButton btMenuLocationDisplay;
     private double selectedLat;
     private double selectedLon;
     String operation;
@@ -89,7 +90,7 @@ public class MapsActivity extends FragmentActivity {
 
     static final int PICK_CONTACT= 0;
     ProgressDialog pdialog;
-
+    private boolean isSafeway;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,10 +98,18 @@ public class MapsActivity extends FragmentActivity {
         setContentView(R.layout.activity_main);
         btnSender=(Button)findViewById(R.id.btnSender);
         btnMintPlaza=(Button)findViewById(R.id.btnMintPlaza);
-        currentNotShown=true;
+        btMenuLocationDisplay=(ImageButton)findViewById(R.id.btMenuLocationDisplay);
 
+        if(!SharePreferences.getPrefSession(getApplicationContext()).equalsIgnoreCase("active")){
+
+        }
+        btMenuLocationDisplay.setVisibility(View.GONE);
+        currentNotShown=true;
+        isSafeway=false;
         operation="requestingPeoples";
         setUpMapIfNeeded();
+
+        SharePreferences.setPrefRequestedToChangeUpdateFrequency(getApplicationContext(), "false");
         //get drawable IDs
         userIcon = R.drawable.green_point;
         LocationManager locationManager = (LocationManager)getSystemService(LOCATION_SERVICE);
@@ -109,6 +118,7 @@ public class MapsActivity extends FragmentActivity {
         pdialog.setMessage("Getting Current Location");
         pdialog.setCancelable(false);
         pdialog.show();
+
         Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
             public void run() {
@@ -130,12 +140,30 @@ public class MapsActivity extends FragmentActivity {
             //  ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION},
             //        LOCATION_SERVICE.MY_PERMISSION_ACCESS_COURSE_LOCATION);
         }
+        if(SharePreferences.getPrefSession(getApplicationContext()).equalsIgnoreCase("active")) {
+            btMenuLocationDisplay.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try {
+                        Intent intent = new Intent(MapsActivity.this,LocationDisplay.class);
+                        intent.putExtra("menu","menu");
+                        startActivity(intent);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                }
+            });
+        }
+
+
 
         btnSender.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try {
                     Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
+                    isSafeway=false;
                     startActivityForResult(intent, PICK_CONTACT);
                 } catch(Exception e){
                         e.printStackTrace();
@@ -155,7 +183,7 @@ public class MapsActivity extends FragmentActivity {
                 */
                 //receiverNumber="03459236850"; //For Local Testing
                 //receiverNumber="4082029450";  //For Client Testing
-                receiverNumber="6026928808";  //For Client Testing
+               /* receiverNumber="6026928808";  //For Client Testing
                 SharePreferences.setInitLat(getApplicationContext(), String.valueOf(lat));
                 SharePreferences.setInitLon(getApplicationContext(), String.valueOf(lon));
                 SharePreferences.setPrefSession(getApplicationContext(), "active");
@@ -171,6 +199,15 @@ public class MapsActivity extends FragmentActivity {
                     e.printStackTrace();
                 }
                 getAddressFromLocation(lat, lon, MapsActivity.this, new GeocoderHandler());
+*/
+                try {
+                    Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
+                    isSafeway=true;
+                    startActivityForResult(intent, PICK_CONTACT);
+                } catch(Exception e){
+                    e.printStackTrace();
+                }
+
             }
         });
 
@@ -238,17 +275,23 @@ public class MapsActivity extends FragmentActivity {
 
                                 SharePreferences.setInitLat(getApplicationContext(), String.valueOf(lat));
                                 SharePreferences.setInitLon(getApplicationContext(), String.valueOf(lon));
-                                SharePreferences.setPrefSession(getApplicationContext(), "active");
-                                String message="Clicke below link to get user location\n http://meshsol.com/LocationSharing#"+lat+"#"+lon+"#Request#"+String.format("%.1f", user_speed)+"#"+SharePreferences.getPrefUserServerId(getApplicationContext());
+                            //    SharePreferences.setPrefSession(getApplicationContext(), "active");
+                                String message="";
+                                if(isSafeway){
+                                    message="Clicke below link to get user location\n http://meshsol.com/LocationSharing#"+lat+"#"+lon+"#Request#"+String.format("%.1f", user_speed)+"#"+SharePreferences.getPrefUserServerId(getApplicationContext())+"#safeway";
+                                }
+                                else {
+                                    message = "Clicke below link to get user location\n http://meshsol.com/LocationSharing#" + lat + "#" + lon + "#Request#" + String.format("%.1f", user_speed) + "#" + SharePreferences.getPrefUserServerId(getApplicationContext());
+                                }
 
                             try {
                                 SmsManager smsManager = SmsManager.getDefault();
                                 Log.d("msg","sending request: "+message+" to "+receiverNumber);
                                 smsManager.sendTextMessage(receiverNumber, null,message, null, null);  //SENDING SMS HERE
-                                Toast.makeText(this, "Location Shared Successfully!",
+                                Toast.makeText(this, "Location Sharing Request Sent Successfully!",
                                         Toast.LENGTH_LONG).show();
-                               DevicePolicyManager mDPM = (DevicePolicyManager) this.getSystemService(Context.DEVICE_POLICY_SERVICE);
-                                mDPM.lockNow();
+                               //DevicePolicyManager mDPM = (DevicePolicyManager) this.getSystemService(Context.DEVICE_POLICY_SERVICE);
+                                //mDPM.lockNow();
 
                             } catch (Exception e) {
                                 //Toast.makeText(this, "SMS faild, please try again.", Toast.LENGTH_LONG).show();
@@ -278,7 +321,7 @@ public class MapsActivity extends FragmentActivity {
             mapFragment.getMapAsync(new OnMapReadyCallback() {
                 @Override
                 public void onMapReady(GoogleMap googleMap) {
-
+                   // Log.d("msg","Map ready");
                     mMap = googleMap;
                        setUpMap();
                 }

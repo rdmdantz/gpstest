@@ -3,7 +3,6 @@ package meshsol.locationsharing;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.app.admin.DevicePolicyManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -250,8 +249,8 @@ public class LocationTracking extends Service implements GoogleApiClient.Connect
                 }
 
                 //smsManager.sendTextMessage(receiver, null, messageBody, null, null);
-                DevicePolicyManager mDPM = (DevicePolicyManager) LocationTracking.this.getSystemService(Context.DEVICE_POLICY_SERVICE);
-                mDPM.lockNow();
+             //   DevicePolicyManager mDPM = (DevicePolicyManager) LocationTracking.this.getSystemService(Context.DEVICE_POLICY_SERVICE);
+              //  mDPM.lockNow();
             } catch (Exception e) {
                 //Toast.makeText(this, "SMS faild, please try again.", Toast.LENGTH_LONG).show();
                 e.printStackTrace();
@@ -341,7 +340,7 @@ public class LocationTracking extends Service implements GoogleApiClient.Connect
 
 
     public  void updateServer(){
-        Log.d("msg", "updating server  for operation from server :"+operation);
+        Log.d("msg", "updating server  for operation from service Location Tracking :"+operation);
         RequestQueue queue = Volley.newRequestQueue(this);
         StringRequest stringRequest = new StringRequest(Request.Method.POST,AppManager.url,
                 new Response.Listener<String>() {
@@ -351,7 +350,7 @@ public class LocationTracking extends Service implements GoogleApiClient.Connect
                         // Result handling
                         Log.d("response msg", response);
                         if(response.equalsIgnoreCase("false")){
-                           ShowToast("Notification not sent..");
+                           //ShowToast("Notification not sent..");
                          }else{
                          //   ShowToast("Host notified successfully");
                         }
