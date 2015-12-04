@@ -22,4 +22,6 @@ public class AppManager {
     public static double SafewayLatitude=37.3946841;    //for client
     public static double SafewayLongitude=-121.9480919; //for client
 
+    //public static double SafewayLatitude=33.6505986;  //Sheryar biryani center
+    //public static double SafewayLongitude=73.0889171; //Sheryar biryani center
 }

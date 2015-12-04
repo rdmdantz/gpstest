@@ -1,7 +1,9 @@
 package meshsol.locationsharing;
 
 import android.app.Activity;
+import android.app.AlarmManager;
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -19,11 +21,13 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.ContactsContract;
+import android.provider.Settings;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -54,6 +58,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 
 
 public class MapsActivity extends FragmentActivity {
@@ -81,7 +86,7 @@ public class MapsActivity extends FragmentActivity {
     float user_speed=0.0f;
     //the map
     private GoogleMap theMap;
-
+    String session_id;
     //location manager
     private LocationManager locMan;
 
@@ -89,6 +94,8 @@ public class MapsActivity extends FragmentActivity {
     private Marker userMarker;
 
     static final int PICK_CONTACT= 0;
+    public static final int ACTION_MANAGE_OVERLAY_PERMISSION_REQUEST_CODE= 5469;
+
     ProgressDialog pdialog;
     private boolean isSafeway;
 
@@ -98,15 +105,15 @@ public class MapsActivity extends FragmentActivity {
         setContentView(R.layout.activity_main);
         btnSender=(Button)findViewById(R.id.btnSender);
         btnMintPlaza=(Button)findViewById(R.id.btnMintPlaza);
-        btMenuLocationDisplay=(ImageButton)findViewById(R.id.btMenuLocationDisplay);
+        /*btMenuLocationDisplay=(ImageButton)findViewById(R.id.btMenuLocationDisplay);*/
 
         if(!SharePreferences.getPrefSession(getApplicationContext()).equalsIgnoreCase("active")){
 
         }
-        btMenuLocationDisplay.setVisibility(View.GONE);
+/*        btMenuLocationDisplay.setVisibility(View.GONE);*/
         currentNotShown=true;
         isSafeway=false;
-        operation="requestingPeoples";
+        operation="request";
         setUpMapIfNeeded();
 
         SharePreferences.setPrefRequestedToChangeUpdateFrequency(getApplicationContext(), "false");
@@ -118,6 +125,10 @@ public class MapsActivity extends FragmentActivity {
         pdialog.setMessage("Getting Current Location");
         pdialog.setCancelable(false);
         pdialog.show();
+
+        if(android.os.Build.VERSION.SDK_INT>=23) {
+            testPermission();
+        }
 
         Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
@@ -140,22 +151,6 @@ public class MapsActivity extends FragmentActivity {
             //  ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION},
             //        LOCATION_SERVICE.MY_PERMISSION_ACCESS_COURSE_LOCATION);
         }
-        if(SharePreferences.getPrefSession(getApplicationContext()).equalsIgnoreCase("active")) {
-            btMenuLocationDisplay.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    try {
-                        Intent intent = new Intent(MapsActivity.this,LocationDisplay.class);
-                        intent.putExtra("menu","menu");
-                        startActivity(intent);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                }
-            });
-        }
-
 
 
         btnSender.setOnClickListener(new View.OnClickListener() {
@@ -212,6 +207,21 @@ public class MapsActivity extends FragmentActivity {
         });
 
     }
+
+
+
+
+    public void testPermission() {
+
+            if (android.os.Build.VERSION.SDK_INT>=23 && !Settings.canDrawOverlays(this)) {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:" + getPackageName()));
+                startActivityForResult(intent, ACTION_MANAGE_OVERLAY_PERMISSION_REQUEST_CODE);
+            }
+
+    }
+
+
     private void showRefreshDialog(){
         if(currentNotShown==true) {
             AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
@@ -277,11 +287,14 @@ public class MapsActivity extends FragmentActivity {
                                 SharePreferences.setInitLon(getApplicationContext(), String.valueOf(lon));
                             //    SharePreferences.setPrefSession(getApplicationContext(), "active");
                                 String message="";
+                                Random r = new Random();
+                                session_id  = String.valueOf(r.nextInt(6 - 1) + 1);
+                                SharePreferences.setPrefSessionid(getApplicationContext(),session_id);
                                 if(isSafeway){
-                                    message="Clicke below link to get user location\n http://meshsol.com/LocationSharing#"+lat+"#"+lon+"#Request#"+String.format("%.1f", user_speed)+"#"+SharePreferences.getPrefUserServerId(getApplicationContext())+"#safeway";
+                                    message="Clicke below link to get user location\n http://meshsol.com/LocationSharing#"+lat+"#"+lon+"#Request#"+String.format("%.1f", user_speed)+"#"+SharePreferences.getPrefUserServerId(getApplicationContext())+"#safeway#"+session_id;
                                 }
                                 else {
-                                    message = "Clicke below link to get user location\n http://meshsol.com/LocationSharing#" + lat + "#" + lon + "#Request#" + String.format("%.1f", user_speed) + "#" + SharePreferences.getPrefUserServerId(getApplicationContext());
+                                    message = "Clicke below link to get user location\n http://meshsol.com/LocationSharing#" + lat + "#" + lon + "#Request#" + String.format("%.1f", user_speed) + "#" + SharePreferences.getPrefUserServerId(getApplicationContext())+ "#" +session_id;
                                 }
 
                             try {
@@ -297,13 +310,20 @@ public class MapsActivity extends FragmentActivity {
                                 //Toast.makeText(this, "SMS faild, please try again.", Toast.LENGTH_LONG).show();
                                 e.printStackTrace();
                             }
+                            operation="request";
                             getAddressFromLocation(lat, lon, MapsActivity.this, new GeocoderHandler());
                         }
                     }
+                }
+                     break;
+                    case (ACTION_MANAGE_OVERLAY_PERMISSION_REQUEST_CODE):
+                        if (android.os.Build.VERSION.SDK_INT>=23 && Settings.canDrawOverlays(this)) {
+                            // You have permission
+                        }
                     break;
                 }
         }
-    }
+
 
      @Override
     public void onResume() {
@@ -469,8 +489,53 @@ public class MapsActivity extends FragmentActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        // getMenuInflater().inflate(R.menu.menu_main, menu);
+
+            MenuItem menuItemSession;
+            MenuItem menuItemForceStop;
+            getMenuInflater().inflate(R.menu.main_menu, menu);
+            menuItemSession = menu.findItem(R.id.action_session);
+            menuItemForceStop = menu.findItem(R.id.action_forceStop);
+
+            if(SharePreferences.getPrefMode(getApplicationContext()).equalsIgnoreCase(AppManager.guestMode)){
+                menuItemSession.setVisible(false);
+            }else if(SharePreferences.getPrefMode(getApplicationContext()).equalsIgnoreCase(AppManager.hostMode)){
+                menuItemForceStop.setVisible(false);
+            }else{
+                menuItemSession.setVisible(false);
+                menuItemForceStop.setVisible(false);
+            }
+        this.invalidateOptionsMenu();
         return true;
+    }
+
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_session:
+                // Move to LocationDisplay
+                Intent intent=new Intent(MapsActivity.this,LocationDisplay.class);
+                intent.putExtra("caller","home");
+                startActivity(intent);
+                return true;
+            case R.id.action_forceStop:
+                // Stop all alarm
+                cancelAllAlarms();
+                try {
+                    operation="stopUpdatingLocation1";
+                    getAddressFromLocation(lat, lon, MapsActivity.this, new GeocoderHandler());
+                    SharePreferences.setPrefMode(getApplicationContext(), "");
+                    SharePreferences.setPrefSession(getApplicationContext(), "");
+                    this.setUpMapIfNeeded();
+                  } catch (Exception e) {
+                    Log.e("msg", e.getMessage().toString());
+                }
+
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+
     }
 
     private void showGPSDisabledAlertToUser(){
@@ -509,7 +574,6 @@ public class MapsActivity extends FragmentActivity {
     }
 
     private void sendRequest(){
-        Log.d("msg", "sending Request");
         RequestQueue queue = Volley.newRequestQueue(this);
         StringRequest stringRequest = new StringRequest(Request.Method.POST,AppManager.url,
                 new Response.Listener<String>() {
@@ -536,19 +600,22 @@ public class MapsActivity extends FragmentActivity {
             protected Map getParams() throws AuthFailureError
             {
                 Map<String,String> params = new HashMap<String, String>();
-                params.put("operation","request");
-                Log.d("msg"," setting op as request");
+                params.put("operation",operation);
+                Log.d("msg","updating server for operation "+operation);
                 params.put("message_type","request");
                 params.put("lat",String.valueOf(lat));
                 params.put("lon",String.valueOf(lon));
                 params.put("speed", String.format("%.1f", user_speed));
-                params.put("receiver", receiverNumber);
+                params.put("receiver", SharePreferences.getPrefHostPhone(getApplicationContext()));
                 params.put("sender", SharePreferences.getPrefUserNumber(getApplicationContext()));
                 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 Calendar calendar = Calendar.getInstance();
                 formatter.format(calendar.getTimeInMillis());
                 params.put("date_time", formatter.format(calendar.getTimeInMillis()));
                 params.put("location",addressResult);
+                params.put("host_server_id",SharePreferences.getPrefHostServerId(getApplicationContext()));
+                params.put("session_id",SharePreferences.getPrefSessionid(getApplicationContext()));
+                Log.d("msg params",params.toString());
                 return params;
             }
         };
@@ -624,6 +691,44 @@ public class MapsActivity extends FragmentActivity {
             sendRequest();
         }
     }
+
+
+    private void cancelAllAlarms(){
+        Context context=getApplicationContext();
+
+        //STOP SENDING NORMAL UPDATES
+        AlarmManager aManager = (AlarmManager) getApplicationContext().getSystemService(Context.ALARM_SERVICE);
+        int cancel_alarm_id_normal=Integer.valueOf(SharePreferences.getPrefNormalAlarmId(getApplicationContext()));
+        Log.e("msg", "STOP SENDING NORMAL UPDATES for id: " + cancel_alarm_id_normal);
+        Intent Receiverintent = new Intent(getApplicationContext(), RepeatNotification.class);
+        PendingIntent alarmIntent;
+        alarmIntent = PendingIntent.getBroadcast(getApplicationContext(),cancel_alarm_id_normal, Receiverintent, PendingIntent.FLAG_UPDATE_CURRENT);
+        alarmIntent.cancel();
+        aManager.cancel(alarmIntent);
+
+        //STOP SENDING HIGH FREQUENCY UPDATES
+        AlarmManager aManager1= (AlarmManager) context.getSystemService(context.ALARM_SERVICE);
+        int cancel_alarm_id_hf=Integer.valueOf(SharePreferences.getPrefHighfrequencyAlarmId(getApplicationContext()));
+        Log.d("msg", "STOP SENDING HIGH FREQUENCY UPDATES for id: " + cancel_alarm_id_hf);
+        Intent Receiverintent1 = new Intent(getApplicationContext(), HighFreqAlarm.class);
+        PendingIntent alarmIntent1;
+        alarmIntent1 = PendingIntent.getBroadcast(getApplicationContext(),cancel_alarm_id_hf, Receiverintent1, PendingIntent.FLAG_UPDATE_CURRENT);
+        alarmIntent1.cancel();
+        aManager1.cancel(alarmIntent1);
+
+       // SharePreferences.setPrefMode(getApplicationContext(), "");
+      //  this.invalidateOptionsMenu();
+
+        Toast.makeText(getApplicationContext(),"Forced Stop to send Updates",Toast.LENGTH_LONG).show();
+       /* //SHOWING MESSAGE REACHED DESTINATION IN NOTIFICATION BOX.
+        Intent intent1 = new Intent();
+        intent1.setClassName("meshsol.locationsharing", "meshsol.locationsharing.DialogActivity");
+        intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent1.putExtra("msg", "You have reached Destination");
+        startActivity(intent1);
+*/
+    }
+
 
 
 }

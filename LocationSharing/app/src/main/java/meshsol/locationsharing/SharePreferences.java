@@ -45,7 +45,7 @@ public class SharePreferences {
     static final String PREF_IS_SAFEWAY="isSafeway";
 
     static final String PREF_MODE="myMode";
-
+    static final String PREF_SESSIONID="sessionId";
     static SharedPreferences getSharedPreferences(Context ctx) {
         return PreferenceManager.getDefaultSharedPreferences(ctx);
     }
@@ -56,6 +56,14 @@ public class SharePreferences {
         editor.putString(PREF_NORMAL_ALARM_ID, id);
         editor.commit();
     }
+
+    public static void setPrefSessionid(Context ctx, String id)
+    {
+        SharedPreferences.Editor editor = getSharedPreferences(ctx).edit();
+        editor.putString(PREF_SESSIONID, id);
+        editor.commit();
+    }
+
 
     public static void setPrefMode(Context ctx, String mode)
     {
@@ -330,6 +338,11 @@ public class SharePreferences {
 
     public static boolean getPrefIsSafeway(Context ctx) {
         return getSharedPreferences(ctx).getBoolean(PREF_IS_SAFEWAY, false);
+    }
+
+
+    public static String getPrefSessionid(Context ctx) {
+        return getSharedPreferences(ctx).getString(PREF_SESSIONID, "");
     }
 
 

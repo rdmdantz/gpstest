@@ -107,17 +107,23 @@ public class SmsBroadcastReceiver extends BroadcastReceiver {
                                 intent1.putExtra("speed", separated[4]);
                                 intent1.putExtra("server_id", separated[5]);
                             }
+                            if(separated.length>6){
+                                SharePreferences.setPrefSessionid(appContext, separated[6]);
+                            }
+
                             if(separated.length>6 && separated[6].equalsIgnoreCase("safeway")){
                              SharePreferences.setPrefIsSafeway(appContext,true);
+                             SharePreferences.setPrefSessionid(appContext, separated[7]);
                             }else{
-                                SharePreferences.setPrefIsSafeway(appContext,false);
+                                SharePreferences.setPrefIsSafeway(appContext, false);
                             }
+
                             intent1.putExtra("sender", address);
 
                             appContext.startActivity(intent1);
                         }
                     }else{
-                        Log.d("msg","other messages goes here");
+                        Log.d("msg", "other messages goes here");
                     }
 
 

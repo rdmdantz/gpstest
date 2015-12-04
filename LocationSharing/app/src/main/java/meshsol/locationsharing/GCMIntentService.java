@@ -60,7 +60,7 @@ import java.util.Map;
 import java.util.Random;
 
 
-public class GCMIntentService extends IntentService {
+public class GCMIntentService extends IntentService{
 
     private static final String TAG = "msg";
     Double myLat;
@@ -117,7 +117,7 @@ public class GCMIntentService extends IntentService {
 
                 //STOP SENDING HIGH FREQUENCY UPDATES
                 AlarmManager aManager1= (AlarmManager) context.getSystemService(context.ALARM_SERVICE);
-                int cancel_alarm_id_hf=Integer.valueOf(SharePreferences.getPrefNormalAlarmId(getApplicationContext()));
+                int cancel_alarm_id_hf=Integer.valueOf(SharePreferences.getPrefHighfrequencyAlarmId(getApplicationContext()));
                 Log.d("msg", "STOP SENDING HIGH FREQUENCY UPDATES for id: " + cancel_alarm_id_hf);
                 Intent Receiverintent1 = new Intent(getApplicationContext(), HighFreqAlarm.class);
                 PendingIntent alarmIntent1;
@@ -136,7 +136,7 @@ public class GCMIntentService extends IntentService {
             } else if(parts[0].equalsIgnoreCase("stopUpdatingLocation")){
                 //ENDING SESSION
 
-                SharePreferences.setPrefSession(context,"destroyed");
+                SharePreferences.setPrefSession(context,"");
 
                 //STOP SENDING NORMAL UPDATES
                 AlarmManager aManager = (AlarmManager) getApplicationContext().getSystemService(Context.ALARM_SERVICE);
@@ -150,7 +150,7 @@ public class GCMIntentService extends IntentService {
 
                 //STOP SENDING HIGH FREQUENCY UPDATES
                 AlarmManager aManager1= (AlarmManager) context.getSystemService(context.ALARM_SERVICE);
-                int cancel_alarm_id_hf=Integer.valueOf(SharePreferences.getPrefNormalAlarmId(getApplicationContext()));
+                int cancel_alarm_id_hf=Integer.valueOf(SharePreferences.getPrefHighfrequencyAlarmId(getApplicationContext()));
                 Log.d("msg", "STOP SENDING HIGH FREQUENCY UPDATES for id: " + cancel_alarm_id_hf);
                 Intent Receiverintent1 = new Intent(getApplicationContext(), HighFreqAlarm.class);
                 PendingIntent alarmIntent1;
@@ -164,10 +164,41 @@ public class GCMIntentService extends IntentService {
                 intent1.putExtra("msg","Host decided to end Location Sharing Session");
                 startActivity(intent1);
 
+            }else if(parts[0].equalsIgnoreCase("stopUpdatingLocation1")){
+                //ENDING SESSION
+
+                SharePreferences.setPrefSession(context,"");
+
+                //STOP SENDING NORMAL UPDATES
+             /*   AlarmManager aManager = (AlarmManager) getApplicationContext().getSystemService(Context.ALARM_SERVICE);
+                int cancel_alarm_id_normal=Integer.valueOf(SharePreferences.getPrefNormalAlarmId(getApplicationContext()));
+                Log.e("msg", "STOP SENDING NORMAL UPDATES for id: " + cancel_alarm_id_normal);
+                Intent Receiverintent = new Intent(getApplicationContext(), RepeatNotification.class);
+                PendingIntent alarmIntent;
+                alarmIntent = PendingIntent.getBroadcast(getApplicationContext(),cancel_alarm_id_normal, Receiverintent, PendingIntent.FLAG_UPDATE_CURRENT);
+                alarmIntent.cancel();
+                aManager.cancel(alarmIntent);
+
+                //STOP SENDING HIGH FREQUENCY UPDATES
+                AlarmManager aManager1= (AlarmManager) context.getSystemService(context.ALARM_SERVICE);
+                int cancel_alarm_id_hf=Integer.valueOf(SharePreferences.getPrefHighfrequencyAlarmId(getApplicationContext()));
+                Log.d("msg", "STOP SENDING HIGH FREQUENCY UPDATES for id: " + cancel_alarm_id_hf);
+                Intent Receiverintent1 = new Intent(getApplicationContext(), HighFreqAlarm.class);
+                PendingIntent alarmIntent1;
+                alarmIntent1 = PendingIntent.getBroadcast(getApplicationContext(),cancel_alarm_id_hf, Receiverintent1, PendingIntent.FLAG_UPDATE_CURRENT);
+                alarmIntent1.cancel();
+                aManager1.cancel(alarmIntent1);
+
+             */   Intent intent1 = new Intent();
+                intent1.setClassName("meshsol.locationsharing", "meshsol.locationsharing.DialogActivity");
+                intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent1.putExtra("msg","Guest decided to end Location Sharing Session");
+                startActivity(intent1);
+
             }else if (parts[0].equalsIgnoreCase("updateLocation")) {
                 intent = new Intent(context, LocationTracking.class);
                 intent.putExtra("number", sender);
-                Log.e("msg","updateLocationOnRequest");
+                Log.e("msg", "updateLocationOnRequest");
                 intent.putExtra("frequency", "requestedUpdate");
                 if(!isMyServiceRunning(LocationTracking.class,context)) {
                     context.startService(intent);
@@ -320,7 +351,10 @@ public class GCMIntentService extends IntentService {
      * Function using Handler to show Toast message
      */
     public void ShowToast(final String msg)
-    {  final Context MyContext = getApplicationContext();
+    {
+
+
+        final Context MyContext = getApplicationContext();
         new Handler(Looper.getMainLooper()).post(new Runnable()
         {  @Override public void run()
             {
@@ -504,7 +538,7 @@ public class GCMIntentService extends IntentService {
             try {
                 if (result.size() < 1) {
 
-                    ShowToast("No Path available by Road! You can use Air Service");
+                    ShowToast("No Path available!");
                     return;
                 }
 
@@ -586,9 +620,9 @@ public class GCMIntentService extends IntentService {
                 senderName=getContactName(GCMIntentService.this,senderPhone);
                 //Formatting Messages for Displaying
                 if (senderName != "") {
-                    ShowToast(senderName + " is coming to me\n" + "Distance: " + distance + "\n Speed: " + senderSpeed + " miles/h \n ETA: " + etaTime);
+                    ShowToast(senderName + " is coming to me\n" + "Distance: " + distance + "\n Speed: " + senderSpeed + " miles/h \n ETA: " + etaTime+"\n Session ID: "+SharePreferences.getPrefSessionid(getApplicationContext()));
                 } else {
-                    ShowToast(senderPhone + " is coming to me\n" + "Distance: " + distance + "\n Speed: " + senderSpeed + " miles/h \n ETA: " + etaTime);
+                    ShowToast(senderPhone + " is coming to me\n" + "Distance: " + distance + "\n Speed: " + senderSpeed + " miles/h \n ETA: " + etaTime+"\n Session ID: "+SharePreferences.getPrefSessionid(getApplicationContext()));
                 }
 
 
@@ -621,9 +655,6 @@ public class GCMIntentService extends IntentService {
                     String formatedDistance = distance.replaceAll("[a-zA-Z]", "");
                     distance_in_meters = Float.valueOf(formatedDistance);
                 }
-                //etaInMinutes < 4
-                Log.d("msg","distance_in_meters: "+distance_in_meters);
-                Log.d("msg","value boolean: "+ SharePreferences.getPrefRequestedToChangeUpdateFrequency(getApplicationContext()));
                 if (distance_in_meters<17 && extension.equalsIgnoreCase("UpdatingNormal") && SharePreferences.getPrefRequestedToChangeUpdateFrequency(getApplicationContext()).equalsIgnoreCase("false")) {
 
 
@@ -686,6 +717,7 @@ public class GCMIntentService extends IntentService {
                             params.put("receiver",senderPhone);
                             params.put("sender",SharePreferences.getPrefUserNumber(getApplicationContext()));
                             params.put("guest_server_id",SharePreferences.getPrefGuestServerId(getApplicationContext()));
+                            params.put("session_id",SharePreferences.getPrefSessionid(getApplicationContext()));
                             Log.d("msg","Params: "+params.toString());
                             return params;
                         }
@@ -787,4 +819,4 @@ public class GCMIntentService extends IntentService {
     }
 
 
-            }
+}

@@ -4,7 +4,6 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
-    <include layout="@layout/action_bar"/>
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
